@@ -21,18 +21,33 @@ input[type=range]{accent-color:#3b82f6}
 .bp{background:rgba(139,92,246,.15);color:#8b5cf6}
 
 /* SIDEBAR */
-#sidebar{width:220px;background:#080c14;border-right:1px solid #1e2a3a;padding:20px 0;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:10}
-.logo{padding:0 20px 28px;font-size:19px;font-weight:800;color:#fff}
+#sidebar{width:220px;background:#080c14;border-right:1px solid #1e2a3a;padding:20px 0;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:10;transition:width .25s ease}
+#sidebar.collapsed{width:56px}
+.logo{padding:0 20px 28px;font-size:19px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;transition:.25s}
 .logo span{color:#3b82f6}
-.nav-link{padding:9px 20px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;color:#64748b;border-right:2px solid transparent;transition:.15s}
+#sidebar.collapsed .logo{padding:0 0 28px;text-align:center;font-size:14px}
+#sidebar.collapsed .logo .logo-text{display:none}
+.nav-link{padding:9px 20px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;color:#64748b;border-right:2px solid transparent;transition:.15s;white-space:nowrap;overflow:hidden}
 .nav-link:hover{color:#fff;background:rgba(59,130,246,.08)}
 .nav-link.active{color:#fff;font-weight:600;background:rgba(59,130,246,.15);border-right-color:#3b82f6}
+#sidebar.collapsed .nav-link{padding:11px 0;justify-content:center;border-right:none}
+#sidebar.collapsed .nav-link.active{border-right:none;border-left:2px solid #3b82f6}
+.nav-label{transition:.25s}
+#sidebar.collapsed .nav-label{display:none}
 .badge-count{margin-left:auto;background:#ef4444;color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px}
-#reset-btn{margin:auto 16px 0;padding:8px;background:transparent;border:1px solid #1e2a3a;border-radius:8px;color:#64748b;cursor:pointer;font-size:12px;font-family:inherit}
+#sidebar.collapsed .badge-count{display:none}
+#reset-btn{margin:auto 16px 0;padding:8px;background:transparent;border:1px solid #1e2a3a;border-radius:8px;color:#64748b;cursor:pointer;font-size:12px;font-family:inherit;white-space:nowrap;overflow:hidden}
 #reset-btn:hover{color:#fff}
+#sidebar.collapsed #reset-btn{margin:auto 6px 0;font-size:10px;padding:6px 4px}
+
+/* TOGGLE BUTTON */
+#toggle-btn{position:fixed;top:18px;left:228px;z-index:20;background:#1e2a3a;border:1px solid #334155;border-radius:6px;color:#94a3b8;cursor:pointer;font-size:14px;padding:4px 7px;transition:left .25s ease;line-height:1}
+#toggle-btn:hover{color:#fff;background:#334155}
+body.collapsed #toggle-btn{left:62px}
 
 /* MAIN */
-#main{flex:1;margin-left:220px;padding:32px 40px;max-width:1100px}
+#main{flex:1;margin-left:220px;padding:32px 40px;max-width:1100px;transition:margin-left .25s ease}
+body.collapsed #main{margin-left:56px}
 .page{display:none}.page.active{display:block}
 h1{font-size:24px;font-weight:800;color:#fff;margin-bottom:4px}
 .subtitle{color:#64748b;margin-bottom:24px;font-size:13px}
@@ -101,10 +116,12 @@ h1{font-size:24px;font-weight:800;color:#fff;margin-bottom:4px}
 <body>
 
 <div id="sidebar">
-  <div class="logo"><span>Wealth</span>Lens</div>
+  <div class="logo"><span>W</span><span class="logo-text">ealth</span><span>L</span><span class="logo-text">ens</span></div>
   <nav id="nav"></nav>
-  <button id="reset-btn" onclick="resetData()">Reset to Default Data</button>
+  <button id="reset-btn" onclick="resetData()">↺ Reset Data</button>
 </div>
+
+<button id="toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
 
 <div id="main">
   <div id="page-overview" class="page"></div>
@@ -312,11 +329,19 @@ const PAGES = [
 
 function buildNav() {
   const alertCount = D.alerts.filter(a=>a.active).length;
+  const collapsed = document.body.classList.contains("collapsed");
   document.getElementById("nav").innerHTML = PAGES.map(p => `
-    <div class="nav-link${currentPage===p.key?" active":""}" onclick="goTo('${p.key}')">
-      <span>${p.icon}</span><span>${p.label}</span>
+    <div class="nav-link${currentPage===p.key?" active":""}" onclick="goTo('${p.key}')" title="${p.label}">
+      <span>${p.icon}</span><span class="nav-label">${p.label}</span>
       ${p.key==="alerts"&&alertCount>0?`<span class="badge-count">${alertCount}</span>`:""}
     </div>`).join("");
+}
+
+function toggleSidebar() {
+  document.body.classList.toggle("collapsed");
+  document.getElementById("sidebar").classList.toggle("collapsed");
+  const btn = document.getElementById("toggle-btn");
+  btn.textContent = document.body.classList.contains("collapsed") ? "▶" : "☰";
 }
 
 function goTo(page) {
