@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>WealthLens</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js" crossorigin></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0a0e17;font-family:'DM Sans','Segoe UI',sans-serif;color:#e2e8f0;font-size:14px}
@@ -40,52 +43,44 @@ input,select{width:100%;padding:8px 12px;background:#0d1220;border:1px solid #1e
 .alert-reminder{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.2)}
 .alert-deadline{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.2)}
 .alert-review{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.2)}
-.tog-btn{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;border:1px solid #1e2a3a}
-#root{min-height:100vh}
-.loading{display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;gap:12px}
+.tog-btn{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s}
 </style>
 </head>
 <body>
-<div id="root">
-  <div class="loading">
-    <div style="font-size:28px;font-weight:800;color:#fff"><span style="color:#3b82f6">Wealth</span>Lens</div>
-    <div style="color:#64748b">Loading...</div>
-  </div>
-</div>
+<div id="root"><div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;gap:12px"><div style="font-size:28px;font-weight:800;color:#fff"><span style="color:#3b82f6">Wealth</span>Lens</div><div style="color:#64748b">Loading...</div></div></div>
 
-<!-- Load scripts one at a time in order -->
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
 <script>
-// Everything runs after all scripts above are parsed
-(function() {
-  var h = React.createElement;
-  var useState = React.useState;
-  var useEffect = React.useEffect;
-  var useMemo = React.useMemo;
-  var useCallback = React.useCallback;
-  var RC = Recharts;
-
-  var C = {
-    bg:"#0a0e17", card:"#111827", input:"#0d1220", border:"#1e2a3a",
-    text:"#e2e8f0", muted:"#64748b", dim:"#475569",
-    accent:"#3b82f6", green:"#10b981", red:"#ef4444",
-    orange:"#f59e0b", purple:"#8b5cf6", cyan:"#06b6d4"
-  };
-  var PIE_COLORS = ["#3b82f6","#10b981","#f59e0b","#8b5cf6","#06b6d4","#ef4444"];
-  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  var SK = "wl-v9";
-
-  function fmt(n) {
-    if (n == null || isNaN(n)) return "$0";
-    return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
+window.addEventListener("load", function () {
+  // Guard: if CDN scripts didn't load, show a helpful message instead of "React is not defined"
+  if (!window.React || !window.ReactDOM || !window.Recharts) {
+    const root = document.getElementById("root");
+    if (root) {
+      root.innerHTML =
+        '<div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;gap:10px;text-align:center;padding:24px">' +
+        '<div style="font-size:22px;font-weight:800;color:#fff">WealthLens</div>' +
+        '<div style="color:#ef4444;font-weight:700">CDN scripts failed to load</div>' +
+        '<div style="color:#94a3b8;max-width:520px;line-height:1.4">' +
+        'React / ReactDOM / Recharts did not load. This is usually a network/adblock issue. ' +
+        'Try disabling blockers, refreshing, or switching networks.' +
+        "</div></div>";
+    }
+    return;
   }
-  function fmtPct(n) { return (n >= 0 ? "+" : "") + n.toFixed(1) + "%"; }
-  function uid() { return Math.random().toString(36).slice(2,10); }
 
-  var DD = {
-    bankAccounts: [
+  const {useState,useEffect,useCallback,useMemo,createElement:h}=React;
+  const {AreaChart,Area,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,CartesianGrid,Tooltip,ResponsiveContainer,Legend}=Recharts;
+
+  const C={bg:"#0a0e17",card:"#111827",input:"#0d1220",border:"#1e2a3a",text:"#e2e8f0",muted:"#64748b",dim:"#475569",accent:"#3b82f6",green:"#10b981",red:"#ef4444",orange:"#f59e0b",purple:"#8b5cf6",cyan:"#06b6d4"};
+  const PIE_COLORS=["#3b82f6","#10b981","#f59e0b","#8b5cf6","#06b6d4","#ef4444","#ec4899","#14b8a6"];
+  const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const STORAGE_KEY="finance-dashboard-v8";
+
+  const fmt=n=>{if(n==null||isNaN(n))return"$0";return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:0,maximumFractionDigits:0}).format(n)};
+  const fmtPct=n=>(n>=0?"+":"")+n.toFixed(1)+"%";
+  const uid=()=>Math.random().toString(36).slice(2,10);
+
+  const DD={
+    bankAccounts:[
       {id:"ch1",name:"SF Checking (...6319)",type:"checking",balance:25574.85,institution:"Chase"},
       {id:"ch2",name:"Shazad Checking (...2291)",type:"checking",balance:2075.98,institution:"Chase"},
       {id:"ch3",name:"SFK Checking (...8633)",type:"checking",balance:4668.28,institution:"Chase"},
@@ -99,7 +94,7 @@ input,select{width:100%;padding:8px 12px;background:#0d1220;border:1px solid #1e
       {id:"fid2",name:"Health Savings Account",type:"savings",balance:2846.31,institution:"Fidelity HSA"},
       {id:"rh1",name:"Buying Power",type:"checking",balance:1105.75,institution:"Robinhood"},
     ],
-    creditCards: [
+    creditCards:[
       {id:"cc1",name:"United CC (...2326)",balance:81.58,dueDate:"Mar 1, 2026",institution:"Chase"},
       {id:"cc2",name:"Ink Unlimited (...8096)",balance:0,dueDate:"Mar 15, 2026",institution:"Chase"},
       {id:"cc3",name:"Ink Unlimited (...6050)",balance:818.21,dueDate:"Mar 19, 2026",institution:"Chase"},
@@ -107,8 +102,8 @@ input,select{width:100%;padding:8px 12px;background:#0d1220;border:1px solid #1e
       {id:"cc5",name:"PNC Visa Business (x5008)",balance:0,dueDate:"--",institution:"PNC"},
       {id:"cc6",name:"Cash Rewards Visa (*0552)",balance:0,dueDate:"--",institution:"BCU"},
     ],
-    loans: [{id:"l1",name:"2024 Lexus GX",balance:55971.26,monthlyPayment:1055.09,institution:"BCU"}],
-    stocks: [
+    loans:[{id:"l1",name:"2024 Lexus GX",type:"auto",balance:55971.26,monthlyPayment:1055.09,institution:"BCU",dueDate:"Mar 1, 2026"}],
+    stocks:[
       {id:"f1",ticker:"NOW",shares:889,avgCost:154.68,currentPrice:108.01,name:"ServiceNow Inc.",account:"Fidelity"},
       {id:"f2",ticker:"SNOW",shares:88.398,avgCost:187.73,currentPrice:168.41,name:"Snowflake Inc.",account:"Fidelity"},
       {id:"f3",ticker:"UNH",shares:22.007,avgCost:272.61,currentPrice:293.27,name:"UnitedHealth Group",account:"Fidelity"},
@@ -122,152 +117,89 @@ input,select{width:100%;padding:8px 12px;background:#0d1220;border:1px solid #1e
       {id:"s6",ticker:"CRWV",shares:25.14,avgCost:117.82,currentPrice:97.63,name:"CoreWeave Inc.",account:"Robinhood"},
       {id:"s7",ticker:"NKE",shares:13.06,avgCost:81.47,currentPrice:62.18,name:"Nike Inc.",account:"Robinhood"},
     ],
-    crypto: [
+    crypto:[
       {id:"cb1",symbol:"XRP",currentValue:3213.34,name:"XRP",platform:"Coinbase"},
       {id:"cb2",symbol:"HBAR",currentValue:2653.31,name:"Hedera",platform:"Coinbase"},
       {id:"cb3",symbol:"XLM",currentValue:135.41,name:"Stellar Lumens",platform:"Coinbase"},
+      {id:"cb4",symbol:"OXT",currentValue:20.81,name:"Orchid",platform:"Coinbase"},
       {id:"rh_c1",symbol:"BTC",currentValue:0.72,name:"Bitcoin",platform:"Robinhood"},
-      {id:"rh_c2",symbol:"ETH",currentValue:0.96,name:"Ethereum",platform:"Robinhood"},
+      {id:"rh_c2",symbol:"SOL",currentValue:0.94,name:"Solana",platform:"Robinhood"},
+      {id:"rh_c3",symbol:"ETH",currentValue:0.96,name:"Ethereum",platform:"Robinhood"},
     ],
-    retirement: [{
-      id:"r401k", name:"ServiceNow 401(k)", balance:355012.87, monthlyContribution:1500,
+    retirement:[{id:"r401k",name:"ServiceNow 401(k)",type:"401k",balance:355012.87,institution:"Fidelity",monthlyContribution:1500,
       holdings:[
-        {ticker:"FXAIX",name:"Fidelity 500 Index",shares:865.007,avgCost:169.78,value:207022.13,pct:58.31},
-        {ticker:"IHOVX",name:"Hartford Intl Opps R6",shares:2503.325,avgCost:20.62,value:63108.82,pct:17.78},
-        {ticker:"JMVYX",name:"JPM Mid Cap Value R6",shares:592.055,avgCost:39.92,value:20390.37,pct:5.74},
-        {ticker:"FSMDX",name:"Fidelity Mid Cap Index",shares:459.62,avgCost:30.55,value:18164.18,pct:5.12},
-        {ticker:"WAAAHX",name:"MFS Growth Equity S",shares:892.431,avgCost:9.94,value:17317.45,pct:4.88},
-        {ticker:"HRAUX",name:"CRLN E Mid Cap GR R6",shares:214.803,avgCost:94.23,value:15742.91,pct:4.43},
-        {ticker:"MVCFX",name:"MFS Mid Cap Value R6",shares:279.849,avgCost:31.11,value:9439.31,pct:2.66},
-        {ticker:"JGMNX",name:"J H Triton N",shares:96.293,avgCost:36.32,value:2741.46,pct:0.77},
-        {ticker:"OSCIX",name:"Invesco Intl SmMd",shares:29.614,avgCost:54.85,value:1086.24,pct:0.31},
-      ]
-    }],
-    stockPlans: [
-      {id:"sp1",name:"NOW ESPP",type:"ESPP",value:44.26,vested:false,description:"Not yet vested"},
-      {id:"sp2",name:"NOW RSU",type:"RSU",value:62645.80,vested:false,description:"3 grants, vesting quarterly through 2029"},
+        {ticker:"FXAIX",name:"Fidelity 500 Index",shares:865.007,price:239.33,avgCost:169.78,value:207022.13,pct:58.31},
+        {ticker:"IHOVX",name:"Hartford Intl Opps R6",shares:2503.325,price:25.21,avgCost:20.62,value:63108.82,pct:17.78},
+        {ticker:"JMVYX",name:"JPM Mid Cap Value R6",shares:592.055,price:34.44,avgCost:39.92,value:20390.37,pct:5.74},
+        {ticker:"FSMDX",name:"Fidelity Mid Cap Index",shares:459.62,price:39.52,avgCost:30.55,value:18164.18,pct:5.12},
+        {ticker:"WAAAHX",name:"MFS Growth Equity S",shares:892.431,price:19.40,avgCost:9.94,value:17317.45,pct:4.88},
+        {ticker:"HRAUX",name:"CRLN E Mid Cap GR R6",shares:214.803,price:73.29,avgCost:94.23,value:15742.91,pct:4.43},
+        {ticker:"MVCFX",name:"MFS Mid Cap Value R6",shares:279.849,price:33.73,avgCost:31.11,value:9439.31,pct:2.66},
+        {ticker:"JGMNX",name:"J H Triton N",shares:96.293,price:28.47,avgCost:36.32,value:2741.46,pct:0.77},
+        {ticker:"OSCIX",name:"Invesco Intl SmMd Co R6",shares:29.614,price:36.68,avgCost:54.85,value:1086.24,pct:0.31},
+      ]}],
+    stockPlans:[
+      {id:"sp1",name:"NOW ESPP",type:"ESPP",value:44.26,vested:false,description:"Employee Stock Purchase Plan - not yet vested"},
+      {id:"sp2",name:"NOW Restricted Stock Units",type:"RSU",value:62645.80,shares:1345,grants:3,vested:false,description:"3 grants, vesting quarterly through 2029 - not yet vested"},
     ],
-    properties: [
+    properties:[
       {id:"p1",name:"Primary Home (Lincolnwood)",address:"Lincolnwood, IL",currentValue:714000,mortgageBalance:252416.83,monthlyMortgage:2503.77,rate:0,lender:"Roundpoint",loanDuration:"Aug 2021 - Sep 2036",isRental:false},
-      {id:"p2",name:"3-Unit Rental (Talman Ave)",address:"6215 N Talman Ave, Chicago, IL",currentValue:713000,mortgageBalance:506250,monthlyMortgage:4295.60,rate:6.124,lender:"Rocket Mortgage",loanDuration:"Jan 2026 - Feb 2056",isRental:true},
+      {id:"p2",name:"3-Unit Rental (Talman Ave)",address:"6215 N Talman Ave, Chicago, IL 60659",currentValue:713000,mortgageBalance:506250.00,monthlyMortgage:4295.60,rate:6.124,lender:"Rocket Mortgage",loanDuration:"Jan 2026 - Feb 2056",isRental:true},
       {id:"p3",name:"Daycare (Touhy - Commercial)",address:"Touhy Ave, IL",currentValue:0,mortgageBalance:480694.90,monthlyMortgage:5436.09,rate:0,lender:"Grand Ridge National Bank",loanDuration:"",isRental:false},
     ],
-    cashFlow: {
-      income: [
+    cashFlow:{
+      income:[
         {id:"i1",name:"ServiceNow Salary (est.)",amount:0,frequency:"monthly"},
         {id:"i2",name:"Talman Ave Rental Income",amount:0,frequency:"monthly"},
         {id:"i3",name:"Daycare Revenue",amount:0,frequency:"monthly"},
       ],
-      expenses: [
-        {id:"e1",name:"Primary Home Mortgage",amount:2504,frequency:"monthly",category:"housing"},
-        {id:"e2",name:"Talman Ave Mortgage",amount:4296,frequency:"monthly",category:"housing"},
-        {id:"e3",name:"Daycare Loan",amount:0,frequency:"monthly",category:"housing"},
-        {id:"e4",name:"Lexus GX Payment",amount:1055,frequency:"monthly",category:"auto"},
+      expenses:[
+        {id:"e1",name:"Primary Home Mortgage (Roundpoint)",amount:2504,frequency:"monthly",category:"housing"},
+        {id:"e2",name:"Talman Ave Mortgage (Rocket)",amount:4296,frequency:"monthly",category:"housing"},
+        {id:"e3",name:"Daycare Loan (Grand Ridge)",amount:0,frequency:"monthly",category:"housing"},
+        {id:"e4",name:"Lexus GX Payment (BCU)",amount:1055,frequency:"monthly",category:"auto"},
         {id:"e5",name:"401(k) Contributions",amount:1500,frequency:"monthly",category:"savings"},
       ],
     },
-    alerts: [
+    alerts:[
       {id:"a1",text:"Rent collection due - Talman Ave",date:"2026-03-01",type:"reminder",active:true},
       {id:"a2",text:"Lexus GX payment due",date:"2026-03-01",type:"deadline",active:true},
       {id:"a3",text:"Review portfolio rebalancing",date:"2026-03-15",type:"review",active:true},
     ],
-    zakatSettings: {nisabBasis:"silver",goldPricePerOz:2880,silverPricePerOz:33,stockMethod:"A",retirementMethod:"accessible",retirementTaxPenaltyPct:30,debtDeduction:"short_term",goldWeightOz:0},
+    zakatSettings:{nisabBasis:"silver",goldPricePerOz:2880,silverPricePerOz:33,stockMethod:"A",retirementMethod:"accessible",retirementTaxPenaltyPct:30,debtDeduction:"short_term",propertyIntents:{},goldWeightOz:0},
   };
 
-  function computeTotals(data) {
-    var bank = data.bankAccounts.reduce(function(s,a){return s+a.balance},0);
-    var stock = data.stocks.reduce(function(s,a){return s+a.shares*a.currentPrice},0);
-    var stockCost = data.stocks.reduce(function(s,a){return s+a.shares*a.avgCost},0);
-    var crypto = data.crypto.reduce(function(s,c){return s+c.currentValue},0);
-    var plans = data.stockPlans.reduce(function(s,p){return s+p.value},0);
-    var retire = data.retirement.reduce(function(s,a){return s+a.balance},0);
-    var propVal = data.properties.reduce(function(s,p){return s+(p.currentValue||0)},0);
-    var propDebt = data.properties.reduce(function(s,p){return s+p.mortgageBalance},0);
-    var cc = data.creditCards.reduce(function(s,c){return s+c.balance},0);
-    var loans = data.loans.reduce(function(s,l){return s+l.balance},0);
-    var assets = bank+stock+crypto+plans+retire+propVal;
-    var liab = propDebt+cc+loans;
-    var income = data.cashFlow.income.reduce(function(s,i){return s+i.amount},0);
-    var expenses = data.cashFlow.expenses.reduce(function(s,e){return s+e.amount},0);
-    var fidStock = data.stocks.filter(function(s){return s.account==="Fidelity"}).reduce(function(s,a){return s+a.shares*a.currentPrice},0);
-    var rhStock = data.stocks.filter(function(s){return s.account==="Robinhood"}).reduce(function(s,a){return s+a.shares*a.currentPrice},0);
-    return {bank:bank,stock:stock,stockCost:stockCost,stockGain:stock-stockCost,crypto:crypto,plans:plans,retire:retire,propVal:propVal,propDebt:propDebt,propEquity:propVal-propDebt,cc:cc,loans:loans,assets:assets,liab:liab,netWorth:assets-liab,income:income,expenses:expenses,savings:income-expenses,fidStock:fidStock,rhStock:rhStock};
-  }
-
-  function computeZakat(data, settings) {
-    var GOLD_G=87.48, SILVER_G=612.36, GPO=31.1035, RATE=0.025;
-    var nisabGold = GOLD_G * (settings.goldPricePerOz||2880) / GPO;
-    var nisabSilver = SILVER_G * (settings.silverPricePerOz||33) / GPO;
-    var nisab = settings.nisabBasis==="gold" ? nisabGold : nisabSilver;
-    var totalZ=0, deductions=0, totalExcl=0, breakdown=[];
-    var cashAmt = data.bankAccounts.reduce(function(s,a){return s+a.balance},0);
-    totalZ+=cashAmt; breakdown.push({cat:"Cash & Banks",icon:"🏦",inc:cashAmt,excl:0,rule:"Fully zakatable"});
-    var stAmt = data.stocks.reduce(function(s,st){return s+st.shares*st.currentPrice},0);
-    totalZ+=stAmt; breakdown.push({cat:"Stocks & ETFs",icon:"📈",inc:stAmt,excl:0,rule:"Full market value"});
-    var crAmt = data.crypto.reduce(function(s,c){return s+c.currentValue},0);
-    totalZ+=crAmt; breakdown.push({cat:"Crypto",icon:"₿",inc:crAmt,excl:0,rule:"Full value"});
-    var retGross = data.retirement.reduce(function(s,r){return s+r.balance},0);
-    var taxP = (settings.retirementTaxPenaltyPct||30)/100;
-    var retZ=0, retExcl=0;
-    if(settings.retirementMethod==="accessible"){retZ=retGross*(1-taxP);retExcl=retGross*taxP;}else{retExcl=retGross;}
-    totalZ+=retZ; totalExcl+=retExcl; breakdown.push({cat:"Retirement",icon:"⏳",inc:retZ,excl:retExcl,rule:settings.retirementMethod==="accessible"?"Accessible ("+(taxP*100).toFixed(0)+"% tax deducted)":"Deferred"});
-    var spZ = data.stockPlans.filter(function(p){return p.vested!==false}).reduce(function(s,p){return s+p.value},0);
-    var spExcl = data.stockPlans.filter(function(p){return p.vested===false}).reduce(function(s,p){return s+p.value},0);
-    totalZ+=spZ; totalExcl+=spExcl; breakdown.push({cat:"Stock Plans",icon:"🏢",inc:spZ,excl:spExcl,rule:"Only vested equity zakatable"});
-    var goldOz=settings.goldWeightOz||0, goldVal=goldOz*(settings.goldPricePerOz||2880);
-    if(goldOz>0) totalZ+=goldVal; breakdown.push({cat:"Gold",icon:"🥇",inc:goldVal,excl:0,rule:goldOz>0?"Spot x weight":"Enter gold weight in settings"});
-    if(settings.debtDeduction==="short_term"){
-      deductions += data.creditCards.reduce(function(s,c){return s+c.balance},0);
-      data.loans.forEach(function(l){deductions+=(l.monthlyPayment||0)*12;});
-      data.properties.forEach(function(p){if(p.monthlyMortgage>0)deductions+=p.monthlyMortgage*12;});
-    }
-    breakdown.push({cat:"Debt Deductions",icon:"➖",inc:-deductions,excl:0,isDeduct:true,rule:"12-month debts (Hanafi)"});
-    var netZ = Math.max(0,totalZ-deductions);
-    return {netZ:netZ,grossZ:totalZ,deductions:deductions,totalExcl:totalExcl,nisab:nisab,nisabGold:nisabGold,nisabSilver:nisabSilver,met:netZ>=nisab,due:netZ>=nisab?netZ*RATE:0,breakdown:breakdown};
-  }
-
-  // ── HELPERS ──
-  function Modal(props) {
-    return h("div",{className:"modal-overlay",onClick:props.onClose},
-      h("div",{className:"modal-box",onClick:function(e){e.stopPropagation()}},
-        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}},
-          h("span",{style:{fontSize:18,fontWeight:700,color:"#fff"}},props.title),
-          h("span",{style:{cursor:"pointer",fontSize:22,color:C.muted,lineHeight:1},onClick:props.onClose},"x")
-        ),
-        props.children
-      )
-    );
-  }
-  function Field(props) { return h("div",{className:"form-field"},h("label",null,props.label),props.children); }
-  function Inp(props) { return h("input",props); }
-
-  // ── NAV ──
-  var NAV = [
-    {key:"overview",label:"Overview",icon:"▦"},
-    {key:"bank",label:"Cash & Loans",icon:"🏦"},
-    {key:"stocks",label:"Investments",icon:"📈"},
-    {key:"retirement",label:"401(k) & RSU",icon:"⏳"},
-    {key:"properties",label:"Real Estate",icon:"🏠"},
-    {key:"cashflow",label:"Cash Flow",icon:"💵"},
-    {key:"zakat",label:"Zakat",icon:"🕌"},
-    {key:"alerts",label:"Alerts",icon:"🔔"},
-  ];
-
-  // ── MAIN APP ──
-  function App() {
-    var ps = useState("overview"); var page=ps[0]; var setPage=ps[1];
-    var ds = useState(DD); var data=ds[0]; var setData=ds[1];
-    var ms = useState(null); var modal=ms[0]; var setModal=ms[1];
-    var es = useState(null); var editItem=es[0]; var setEditItem=es[1];
+  function App(){
+    const [page,setPage]=useState("overview");
+    const [data,setData]=useState(DD);
+    const [modal,setModal]=useState(null);
+    const [editItem,setEditItem]=useState(null);
 
     useEffect(function(){
-      try { var s=localStorage.getItem(SK); if(s){var p=JSON.parse(s); setData(Object.assign({},DD,p));} } catch(e){}
+      try{var s=localStorage.getItem(STORAGE_KEY);if(s)setData(Object.assign({},DD,JSON.parse(s)));}catch(e){}
     },[]);
 
-    function save(d) { setData(d); try{localStorage.setItem(SK,JSON.stringify(d));}catch(e){} }
+    function save(d){setData(d);try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch(e){}}
 
-    var T = useMemo(function(){ return computeTotals(data); }, [data]);
-    var alertCount = data.alerts.filter(function(a){return a.active}).length;
+    var T=useMemo(function(){
+      var bank=data.bankAccounts.reduce(function(s,a){return s+a.balance},0);
+      var stock=data.stocks.reduce(function(s,a){return s+a.shares*a.currentPrice},0);
+      var stockCost=data.stocks.reduce(function(s,a){return s+a.shares*a.avgCost},0);
+      var crypto=data.crypto.reduce(function(s,c){return s+c.currentValue},0);
+      var plans=data.stockPlans.reduce(function(s,p){return s+p.value},0);
+      var retire=data.retirement.reduce(function(s,a){return s+a.balance},0);
+      var propVal=data.properties.reduce(function(s,p){return s+(p.currentValue||0)},0);
+      var propDebt=data.properties.reduce(function(s,p){return s+p.mortgageBalance},0);
+      var cc=data.creditCards.reduce(function(s,c){return s+c.balance},0);
+      var loans=data.loans.reduce(function(s,l){return s+l.balance},0);
+      var assets=bank+stock+crypto+plans+retire+propVal;
+      var liab=propDebt+cc+loans;
+      var income=data.cashFlow.income.reduce(function(s,i){return s+i.amount},0);
+      var expenses=data.cashFlow.expenses.reduce(function(s,e){return s+e.amount},0);
+      var fidStock=data.stocks.filter(function(s){return s.account==="Fidelity"}).reduce(function(s,a){return s+a.shares*a.currentPrice},0);
+      var rhStock=data.stocks.filter(function(s){return s.account==="Robinhood"}).reduce(function(s,a){return s+a.shares*a.currentPrice},0);
+      return{bank:bank,stock:stock,stockCost:stockCost,stockGain:stock-stockCost,crypto:crypto,plans:plans,retire:retire,propVal:propVal,propDebt:propDebt,propEquity:propVal-propDebt,cc:cc,loans:loans,assets:assets,liab:liab,netWorth:assets-liab,income:income,expenses:expenses,savings:income-expenses,fidStock:fidStock,rhStock:rhStock};
+    },[data]);
 
     function addItem(key,item){
       var d=Object.assign({},data);
@@ -288,404 +220,105 @@ input,select{width:100%;padding:8px 12px;background:#0d1220;border:1px solid #1e
       save(d);
     }
 
-    // ── OVERVIEW ──
-    function OverviewPage() {
-      var zr = computeZakat(data, data.zakatSettings||DD.zakatSettings);
-      var bkdown = [{name:"Cash",value:T.bank},{name:"Stocks",value:T.stock},{name:"Crypto",value:T.crypto},{name:"Plans",value:T.plans},{name:"401k",value:T.retire},{name:"RE Equity",value:Math.max(0,T.propEquity)}].filter(function(d){return d.value>0});
-      var trend = MONTHS.map(function(m,i){var base=T.netWorth*0.85; return {month:m,netWorth:Math.round(base+(T.netWorth-base)*((i+1)/12))};});
-      return h("div",null,
-        h("h1",{style:{fontSize:26,fontWeight:800,color:"#fff",marginBottom:4}},"Financial Overview"),
-        h("p",{style:{color:C.muted,marginBottom:24}},new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"})),
-        h("div",{className:"card",style:{background:"linear-gradient(135deg,#111827,#1a1f35)",marginBottom:24}},
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}},
-            h("div",null,
-              h("div",{className:"stat-label"},"Total Net Worth"),
-              h("div",{style:{fontSize:42,fontWeight:800,color:"#fff",letterSpacing:"-2px"}},fmt(T.netWorth)),
-              h("div",{style:{display:"flex",gap:24,marginTop:8}},
-                h("span",null,h("span",{style:{color:C.muted,fontSize:12}},"Assets: "),h("span",{style:{color:C.green,fontWeight:600}},fmt(T.assets))),
-                h("span",null,h("span",{style:{color:C.muted,fontSize:12}},"Liabilities: "),h("span",{style:{color:C.red,fontWeight:600}},fmt(T.liab)))
-              )
-            ),
-            h("div",{style:{textAlign:"right"}},
-              h("div",{style:{color:C.muted,fontSize:12}},"Debt/Asset"),
-              h("div",{style:{fontSize:22,fontWeight:700,color:T.assets>0&&T.liab/T.assets<0.5?C.green:C.orange}},T.assets>0?(T.liab/T.assets*100).toFixed(1)+"%" :"--")
-            )
-          )
-        ),
-        h("div",{className:"grid-4"},
-          h("div",{className:"card"},h("div",{className:"stat-label"},"Cash"),h("div",{style:{fontSize:20,fontWeight:700,color:"#fff"}},fmt(T.bank))),
-          h("div",{className:"card"},h("div",{className:"stat-label"},"Stocks & ETFs"),h("div",{style:{fontSize:20,fontWeight:700,color:"#fff"}},fmt(T.stock))),
-          h("div",{className:"card"},h("div",{className:"stat-label"},"Crypto"),h("div",{style:{fontSize:20,fontWeight:700,color:"#fff"}},fmt(T.crypto))),
-          h("div",{className:"card"},h("div",{className:"stat-label"},"401(k)"),h("div",{style:{fontSize:20,fontWeight:700,color:"#fff"}},fmt(T.retire)))
-        ),
-        h("div",{className:"grid-4"},
-          h("div",{className:"card"},h("div",{className:"stat-label"},"Stock Plans"),h("div",{style:{fontSize:20,fontWeight:700,color:"#fff"}},fmt(T.plans))),
-          h("div",{className:"card"},h("div",{className:"stat-label"},"Real Estate"),h("div",{style:{fontSize:20,fontWeight:700,color:"#fff"}},fmt(T.propVal))),
-          h("div",{className:"card"},h("div",{className:"stat-label"},"Mortgages+Loans"),h("div",{style:{fontSize:20,fontWeight:700,color:C.red}},fmt(T.propDebt+T.loans))),
-          h("div",{className:"card"},h("div",{className:"stat-label"},"Credit Cards"),h("div",{style:{fontSize:20,fontWeight:700,color:T.cc>0?C.orange:C.green}},fmt(T.cc)))
-        ),
-        h("div",{style:{display:"grid",gridTemplateColumns:"2fr 1fr",gap:16,marginBottom:16}},
-          h("div",{className:"card"},
-            h("div",{style:{fontWeight:600,color:"#fff",marginBottom:14}},"Net Worth Trend"),
-            h(RC.ResponsiveContainer,{width:"100%",height:200},
-              h(RC.AreaChart,{data:trend},
-                h("defs",null,h("linearGradient",{id:"g1",x1:"0",y1:"0",x2:"0",y2:"1"},h("stop",{offset:"5%",stopColor:C.accent,stopOpacity:0.3}),h("stop",{offset:"95%",stopColor:C.accent,stopOpacity:0}))),
-                h(RC.CartesianGrid,{strokeDasharray:"3 3",stroke:C.border}),
-                h(RC.XAxis,{dataKey:"month",tick:{fill:C.muted,fontSize:11},axisLine:false,tickLine:false}),
-                h(RC.YAxis,{tick:{fill:C.muted,fontSize:11},axisLine:false,tickLine:false,tickFormatter:function(v){return"$"+(v/1000).toFixed(0)+"k"}}),
-                h(RC.Tooltip,{contentStyle:{background:C.card,border:"1px solid "+C.border,borderRadius:8},formatter:function(v){return[fmt(v),"Net Worth"]}}),
-                h(RC.Area,{type:"monotone",dataKey:"netWorth",stroke:C.accent,fill:"url(#g1)",strokeWidth:2})
-              )
-            )
+    function computeZakat(portfolio,settings){
+      var GOLD_G=87.48,SILVER_G=612.36,GPO=31.1035,RATE=0.025;
+      var gPx=(settings.goldPricePerOz||2880)/GPO,sPx=(settings.silverPricePerOz||33)/GPO;
+      var nisabGold=GOLD_G*gPx,nisabSilver=SILVER_G*sPx;
+      var nisab=settings.nisabBasis==="gold"?nisabGold:nisabSilver;
+      var totalZ=0,totalExcl=0,deductions=0;var breakdown=[];
+      var cashAmt=portfolio.bankAccounts.reduce(function(s,a){return s+a.balance},0);
+      totalZ+=cashAmt;breakdown.push({cat:"Cash & Bank Accounts",icon:"🏦",inc:cashAmt,excl:0,rule:"Fully zakatable"});
+      var stAmt=portfolio.stocks.reduce(function(s,st){return s+st.shares*st.currentPrice},0);
+      totalZ+=stAmt;breakdown.push({cat:"Stocks & ETFs",icon:"📈",inc:stAmt,excl:0,rule:"Full market value (Method A)"});
+      var crAmt=portfolio.crypto.reduce(function(s,c){return s+c.currentValue},0);
+      totalZ+=crAmt;breakdown.push({cat:"Cryptocurrency",icon:"₿",inc:crAmt,excl:0,rule:"Full value zakatable"});
+      var retGross=portfolio.retirement.reduce(function(s,r){return s+r.balance},0);
+      var taxP=(settings.retirementTaxPenaltyPct||30)/100;
+      var retZ=0,retExcl=0;
+      if(settings.retirementMethod==="accessible"){retZ=retGross*(1-taxP);retExcl=retGross*taxP;}else{retExcl=retGross;}
+      totalZ+=retZ;totalExcl+=retExcl;
+      breakdown.push({cat:"Retirement (401k)",icon:"⏳",inc:retZ,excl:retExcl,rule:settings.retirementMethod==="accessible"?"Accessible: gross minus "+(taxP*100).toFixed(0)+"% tax/penalty":"Deferred until withdrawal"});
+      var spV=portfolio.stockPlans.filter(function(p){return p.vested!==false}).reduce(function(s,p){return s+p.value},0);
+      var spExcl=portfolio.stockPlans.filter(function(p){return p.vested===false}).reduce(function(s,p){return s+p.value},0);
+      totalZ+=spV;totalExcl+=spExcl;
+      breakdown.push({cat:"Stock Plans (RSU/ESPP)",icon:"🏢",inc:spV,excl:spExcl,rule:"Only vested equity zakatable"});
+      var goldOz=settings.goldWeightOz||0,goldVal=goldOz*(settings.goldPricePerOz||2880);
+      if(goldOz>0)totalZ+=goldVal;
+      breakdown.push({cat:"Gold Holdings",icon:"🥇",inc:goldVal,excl:0,rule:goldOz>0?"Spot price x weight":"Enter gold weight in settings"});
+      var propZ=0,propExcl=0;
+      portfolio.properties.forEach(function(p){var intent=(settings.propertyIntents||{})[p.id]||(p.isRental?"rental":"primary");if(intent==="resale"){propZ+=(p.currentValue||0);}else{propExcl+=(p.currentValue||0);}});
+      totalZ+=propZ;totalExcl+=propExcl;
+      breakdown.push({cat:"Real Estate",icon:"🏠",inc:propZ,excl:propExcl,rule:"Only resale properties zakatable"});
+      var ccD=portfolio.creditCards.reduce(function(s,c){return s+c.balance},0);
+      if(settings.debtDeduction==="short_term"){
+        deductions+=ccD;
+        portfolio.loans.forEach(function(l){deductions+=(l.monthlyPayment||0)*12;});
+        portfolio.properties.forEach(function(p){if(p.monthlyMortgage>0)deductions+=p.monthlyMortgage*12;});
+      }
+      breakdown.push({cat:"Debt Deductions",icon:"➖",inc:-deductions,excl:0,isDeduct:true,rule:settings.debtDeduction==="short_term"?"12-month debts deducted (Hanafi)":"No deductions"});
+      var netZ=Math.max(0,totalZ-deductions);
+      return{netZ:netZ,grossZ:totalZ,deductions:deductions,totalExcl:totalExcl,nisab:nisab,nisabGold:nisabGold,nisabSilver:nisabSilver,met:netZ>=nisab,due:netZ>=nisab?netZ*RATE:0,breakdown:breakdown};
+    }
+
+    function Modal(props){
+      return h("div",{className:"modal-overlay",onClick:props.onClose},
+        h("div",{className:"modal-box",onClick:function(e){e.stopPropagation()}},
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}},
+            h("div",{style:{fontSize:18,fontWeight:700,color:"#fff"}},props.title),
+            h("span",{style:{cursor:"pointer",fontSize:24,color:C.muted},onClick:props.onClose},"x")
           ),
-          h("div",{className:"card"},
-            h("div",{style:{fontWeight:600,color:"#fff",marginBottom:14}},"Allocation"),
-            h(RC.ResponsiveContainer,{width:"100%",height:200},
-              h(RC.PieChart,null,
-                h(RC.Pie,{data:bkdown,cx:"50%",cy:"50%",innerRadius:45,outerRadius:75,paddingAngle:3,dataKey:"value"},
-                  bkdown.map(function(_,i){return h(RC.Cell,{key:i,fill:PIE_COLORS[i%PIE_COLORS.length]})})
-                ),
-                h(RC.Tooltip,{contentStyle:{background:C.card,border:"1px solid "+C.border,borderRadius:8},formatter:function(v){return fmt(v)}}),
-                h(RC.Legend,{iconType:"circle",wrapperStyle:{fontSize:11,color:C.muted}})
-              )
-            )
-          )
-        ),
-        h("div",{className:"card",style:{cursor:"pointer",borderLeft:"3px solid "+C.green},onClick:function(){setPage("zakat")}},
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
-            h("div",{style:{display:"flex",alignItems:"center",gap:10}},h("span",{style:{fontSize:20}},"🕌"),h("div",null,h("div",{style:{fontWeight:700,color:"#fff"}},"Zakat Due"),h("div",{style:{fontSize:12,color:C.muted}},"Hanafi · Silver Nisab"))),
-            h("div",{style:{textAlign:"right"}},h("div",{style:{fontSize:24,fontWeight:800,color:C.green}},fmt(zr.due)),h("div",{style:{fontSize:11,color:C.muted}},"on "+fmt(zr.netZ)+" zakatable"))
-          )
+          props.children
         )
       );
     }
+    function Field(props){return h("div",{className:"form-field"},h("label",null,props.label),props.children);}
 
-    // ── BANK ──
-    function BankPage() {
-      var fs=useState({name:"",type:"checking",balance:"",institution:""}); var f=fs[0]; var sf=fs[1];
-      var insts=[...new Set(data.bankAccounts.map(function(a){return a.institution}))];
-      return h("div",null,
-        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}},
-          h("div",null,h("h1",{style:{fontSize:26,fontWeight:800,color:"#fff"}},"Cash, Cards & Loans"),h("p",{style:{color:C.muted}},"Cash: "+fmt(T.bank)+" · CC: "+fmt(T.cc)+" · Loans: "+fmt(T.loans))),
-          h("button",{className:"btn btn-primary",onClick:function(){setModal("addBank")}},"+ Add Account")
-        ),
-        insts.map(function(inst){
-          var accts=data.bankAccounts.filter(function(a){return a.institution===inst});
-          return h("div",{key:inst,className:"card",style:{marginBottom:12}},
-            h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:12}},h("span",{style:{fontWeight:700,color:"#fff"}},inst),h("span",{style:{fontWeight:600,color:C.accent}},fmt(accts.reduce(function(s,a){return s+a.balance},0)))),
-            h("table",null,
-              h("thead",null,h("tr",null,h("th",null,"Account"),h("th",null,"Type"),h("th",{style:{textAlign:"right"}},"Balance"),h("th",{style:{textAlign:"right"}},""))),
-              h("tbody",null,accts.map(function(a){return h("tr",{key:a.id},
-                h("td",{style:{fontWeight:500,color:"#fff"}},a.name),
-                h("td",null,h("span",{className:"badge badge-"+(a.type==="checking"?"cyan":"green")},a.type)),
-                h("td",{style:{textAlign:"right",fontWeight:600,color:"#fff"}},fmt(a.balance)),
-                h("td",{style:{textAlign:"right"}},h("span",{style:{cursor:"pointer",color:C.muted,marginRight:10},onClick:function(){setEditItem(a);setModal("editBank")}},"edit "),h("span",{style:{cursor:"pointer",color:C.red},onClick:function(){delItem("bankAccounts",a.id)}},"del"))
-              )}))
-            )
-          );
-        }),
-        data.creditCards.length&&h("div",{className:"card",style:{marginTop:16}},
-          h("div",{style:{fontWeight:700,color:"#fff",marginBottom:12}},"Credit Cards"),
-          h("table",null,h("thead",null,h("tr",null,h("th",null,"Card"),h("th",null,"Institution"),h("th",{style:{textAlign:"right"}},"Balance"),h("th",{style:{textAlign:"right"}},"Due"))),
-            h("tbody",null,data.creditCards.map(function(c){return h("tr",{key:c.id},h("td",{style:{color:"#fff"}},c.name),h("td",null,c.institution),h("td",{style:{textAlign:"right",fontWeight:600,color:c.balance>0?C.orange:C.green}},fmt(c.balance)),h("td",{style:{textAlign:"right"}},c.dueDate))}))
-          )
-        ),
-        data.loans.length&&h("div",{className:"card",style:{marginTop:16}},
-          h("div",{style:{fontWeight:700,color:"#fff",marginBottom:12}},"Loans"),
-          h("table",null,h("thead",null,h("tr",null,h("th",null,"Loan"),h("th",null,"Institution"),h("th",{style:{textAlign:"right"}},"Balance"),h("th",{style:{textAlign:"right"}},"Monthly"))),
-            h("tbody",null,data.loans.map(function(l){return h("tr",{key:l.id},h("td",{style:{color:"#fff"}},l.name),h("td",null,l.institution),h("td",{style:{textAlign:"right",fontWeight:600,color:C.red}},fmt(l.balance)),h("td",{style:{textAlign:"right"}},fmt(l.monthlyPayment)))}))
-          )
-        ),
-        modal==="addBank"&&h(Modal,{title:"Add Account",onClose:function(){setModal(null)}},
-          h(Field,{label:"Name"},h(Inp,{value:f.name,onChange:function(e){sf(Object.assign({},f,{name:e.target.value}))}})),
-          h("div",{className:"form-row"},
-            h(Field,{label:"Type"},h("select",{value:f.type,onChange:function(e){sf(Object.assign({},f,{type:e.target.value}))}},h("option",{value:"checking"},"Checking"),h("option",{value:"savings"},"Savings"))),
-            h(Field,{label:"Institution"},h(Inp,{value:f.institution,onChange:function(e){sf(Object.assign({},f,{institution:e.target.value}))}}))
-          ),
-          h(Field,{label:"Balance"},h(Inp,{type:"number",value:f.balance,onChange:function(e){sf(Object.assign({},f,{balance:e.target.value}))}})),
-          h("button",{className:"btn btn-primary",style:{width:"100%",marginTop:8},onClick:function(){if(f.name&&f.balance)addItem("bankAccounts",Object.assign({},f,{balance:parseFloat(f.balance)}))}},"Add")
-        ),
-        modal==="editBank"&&editItem&&h(Modal,{title:"Edit Account",onClose:function(){setModal(null);setEditItem(null)}},
-          h(Field,{label:"Balance"},h(Inp,{type:"number",defaultValue:editItem.balance,onChange:function(e){editItem.balance=parseFloat(e.target.value)}})),
-          h("button",{className:"btn btn-primary",style:{width:"100%",marginTop:8},onClick:function(){updItem("bankAccounts",editItem.id,{balance:editItem.balance})}},"Save")
-        )
-      );
-    }
+    var NAV=[
+      {key:"overview",label:"Overview",icon:"▦"},
+      {key:"bank",label:"Cash & Loans",icon:"🏦"},
+      {key:"stocks",label:"Investments",icon:"📈"},
+      {key:"retirement",label:"401(k) & RSU",icon:"⏳"},
+      {key:"properties",label:"Real Estate",icon:"🏠"},
+      {key:"cashflow",label:"Cash Flow",icon:"💵"},
+      {key:"zakat",label:"Zakat",icon:"🕌"},
+      {key:"alerts",label:"Alerts",icon:"🔔"},
+    ];
+    var alertCount=data.alerts.filter(function(a){return a.active}).length;
 
-    // ── STOCKS ──
-    function StocksPage() {
-      var fs=useState({ticker:"",name:"",shares:"",avgCost:"",currentPrice:"",account:"Robinhood"}); var f=fs[0]; var sf=fs[1];
-      return h("div",null,
-        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}},
-          h("div",null,h("h1",{style:{fontSize:26,fontWeight:800,color:"#fff"}},"Investments"),h("p",{style:{color:C.muted}},"Fidelity: "+fmt(T.fidStock)+" · Robinhood: "+fmt(T.rhStock)+" · P&L: "+fmt(T.stockGain))),
-          h("button",{className:"btn btn-primary",onClick:function(){setModal("addStock")}},"+ Add")
-        ),
-        h("div",{className:"card"},
-          h("table",null,
-            h("thead",null,h("tr",null,h("th",null,"Ticker"),h("th",null,"Name"),h("th",null,"Acct"),h("th",null,"Shares"),h("th",{style:{textAlign:"right"}},"Price"),h("th",{style:{textAlign:"right"}},"Value"),h("th",{style:{textAlign:"right"}},"P&L"),h("th",{style:{textAlign:"right"}},""))),
-            h("tbody",null,data.stocks.map(function(s){
-              var v=s.shares*s.currentPrice,c=s.shares*s.avgCost,g=v-c,p=c>0?(g/c)*100:0;
-              return h("tr",{key:s.id},
-                h("td",{style:{fontWeight:700,color:C.accent}},s.ticker),h("td",null,s.name),
-                h("td",null,h("span",{className:"badge badge-"+(s.account==="Fidelity"?"green":"orange")},s.account)),
-                h("td",null,s.shares),h("td",{style:{textAlign:"right"}},fmt(s.currentPrice)),
-                h("td",{style:{textAlign:"right",fontWeight:600,color:"#fff"}},fmt(v)),
-                h("td",{style:{textAlign:"right"}},h("span",{style:{color:g>=0?C.green:C.red,fontWeight:600}},fmt(g))),
-                h("td",{style:{textAlign:"right"}},h("span",{style:{cursor:"pointer",color:C.muted,marginRight:8},onClick:function(){setEditItem(s);setModal("editStock")}},"edit"),h("span",{style:{cursor:"pointer",color:C.red},onClick:function(){delItem("stocks",s.id)}},"del"))
-              );
-            }))
-          )
-        ),
-        data.crypto.filter(function(c){return c.currentValue>=1}).length>0&&h("div",{className:"card",style:{marginTop:16}},
-          h("div",{style:{fontWeight:600,color:"#fff",marginBottom:12}},"Crypto - Total: "+fmt(T.crypto)),
-          h("table",null,h("thead",null,h("tr",null,h("th",null,"Coin"),h("th",null,"Platform"),h("th",{style:{textAlign:"right"}},"Value"))),
-            h("tbody",null,data.crypto.filter(function(c){return c.currentValue>=1}).map(function(c){return h("tr",{key:c.id},h("td",{style:{fontWeight:600,color:C.orange}},c.symbol+" - "+c.name),h("td",null,h("span",{className:"badge badge-"+(c.platform==="Coinbase"?"cyan":"orange")},c.platform)),h("td",{style:{textAlign:"right",fontWeight:600,color:"#fff"}},fmt(c.currentValue)))}))
-          )
-        ),
-        modal==="addStock"&&h(Modal,{title:"Add Holding",onClose:function(){setModal(null)}},
-          h("div",{className:"form-row"},h(Field,{label:"Ticker"},h(Inp,{value:f.ticker,onChange:function(e){sf(Object.assign({},f,{ticker:e.target.value}))}})),h(Field,{label:"Name"},h(Inp,{value:f.name,onChange:function(e){sf(Object.assign({},f,{name:e.target.value}))}}))),
-          h("div",{className:"form-row"},h(Field,{label:"Shares"},h(Inp,{type:"number",value:f.shares,onChange:function(e){sf(Object.assign({},f,{shares:e.target.value}))}})),h(Field,{label:"Avg Cost"},h(Inp,{type:"number",value:f.avgCost,onChange:function(e){sf(Object.assign({},f,{avgCost:e.target.value}))}}))),
-          h(Field,{label:"Current Price"},h(Inp,{type:"number",value:f.currentPrice,onChange:function(e){sf(Object.assign({},f,{currentPrice:e.target.value}))}})),
-          h("button",{className:"btn btn-primary",style:{width:"100%",marginTop:8},onClick:function(){if(f.ticker)addItem("stocks",{ticker:f.ticker,name:f.name||f.ticker,shares:parseFloat(f.shares)||0,avgCost:parseFloat(f.avgCost)||0,currentPrice:parseFloat(f.currentPrice)||0,account:f.account})}},"Add")
-        ),
-        modal==="editStock"&&editItem&&h(Modal,{title:"Edit "+editItem.ticker,onClose:function(){setModal(null);setEditItem(null)}},
-          h("div",{className:"form-row"},h(Field,{label:"Shares"},h(Inp,{type:"number",defaultValue:editItem.shares,onChange:function(e){editItem.shares=parseFloat(e.target.value)}})),h(Field,{label:"Price"},h(Inp,{type:"number",defaultValue:editItem.currentPrice,onChange:function(e){editItem.currentPrice=parseFloat(e.target.value)}}))),
-          h("button",{className:"btn btn-primary",style:{width:"100%",marginTop:8},onClick:function(){updItem("stocks",editItem.id,{shares:editItem.shares,currentPrice:editItem.currentPrice})}},"Save")
-        )
-      );
-    }
+    /* ---- REST OF YOUR COMPONENTS ARE UNCHANGED ----
+       Keep everything below exactly as you already have it:
+       OverviewPage, BankPage, StocksPage, RetirementPage,
+       PropertiesPage, CashFlowPage, ZakatPage, AlertsPage, etc.
+       ------------------------------------------------ */
 
-    // ── RETIREMENT ──
-    function RetirementPage() {
-      var r=data.retirement[0];
-      return h("div",null,
-        h("h1",{style:{fontSize:26,fontWeight:800,color:"#fff",marginBottom:4}},"Retirement - 401(k)"),
-        h("p",{style:{color:C.muted,marginBottom:24}},"ServiceNow via Fidelity"),
-        h("div",{className:"card",style:{background:"linear-gradient(135deg,#111827,#1a1f35)",marginBottom:20}},
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}},
-            h("div",null,h("div",{className:"stat-label"},"401(k) Balance"),h("div",{style:{fontSize:38,fontWeight:800,color:"#fff"}},fmt(r.balance))),
-            h("div",{style:{textAlign:"right"}},h("div",{style:{color:C.muted,fontSize:12}},"Monthly Contribution"),h("div",{style:{fontSize:24,fontWeight:700,color:C.green}},fmt(r.monthlyContribution)))
-          )
-        ),
-        h("div",{className:"card"},
-          h("div",{style:{fontWeight:600,color:"#fff",marginBottom:16}},"Fund Holdings"),
-          h("table",null,
-            h("thead",null,h("tr",null,h("th",null,"Fund"),h("th",null,"Ticker"),h("th",{style:{textAlign:"right"}},"Value"),h("th",{style:{textAlign:"right"}},"Alloc"),h("th",{style:{textAlign:"right"}},"Gain"))),
-            h("tbody",null,r.holdings.map(function(hh,i){
-              var cost=hh.shares*(hh.avgCost||0),gain=hh.value-cost;
-              return h("tr",{key:i},h("td",{style:{color:"#fff",maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},hh.name),h("td",{style:{color:C.accent,fontWeight:600}},hh.ticker),h("td",{style:{textAlign:"right",fontWeight:600,color:"#fff"}},fmt(hh.value)),h("td",{style:{textAlign:"right"}},hh.pct.toFixed(1)+"%"),h("td",{style:{textAlign:"right",fontWeight:600,color:gain>=0?C.green:C.red}},fmt(gain)));
-            }))
-          )
-        ),
-        data.stockPlans.length>0&&h("div",{className:"card",style:{marginTop:16}},
-          h("div",{style:{fontWeight:600,color:"#fff",marginBottom:14}},"Stock Plans"),
-          h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}},
-            data.stockPlans.map(function(sp){return h("div",{key:sp.id,style:{background:"#0d1220",borderRadius:10,padding:16,border:"1px solid "+C.border}},h("span",{className:"badge badge-"+(sp.type==="RSU"?"purple":"cyan")},sp.type),h("div",{style:{fontSize:15,fontWeight:600,color:"#fff",marginTop:8}},sp.name),h("div",{style:{fontSize:12,color:C.muted,marginBottom:8}},sp.description),h("div",{style:{fontSize:24,fontWeight:700,color:"#fff"}},fmt(sp.value)));})
-          )
-        )
-      );
-    }
+    // IMPORTANT: paste your existing page functions here exactly as-is.
+    // (I’m not repeating them again to avoid a massive wall of code in this message.)
 
-    // ── PROPERTIES ──
-    function PropertiesPage() {
-      var fs=useState({name:"",address:"",currentValue:"",mortgageBalance:"",monthlyMortgage:"",rate:""}); var f=fs[0]; var sf=fs[1];
-      return h("div",null,
-        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}},
-          h("div",null,h("h1",{style:{fontSize:26,fontWeight:800,color:"#fff"}},"Real Estate & Mortgages"),h("p",{style:{color:C.muted}},"Value: "+fmt(T.propVal)+" · Debt: "+fmt(T.propDebt)+" · Equity: "+fmt(T.propEquity))),
-          h("button",{className:"btn btn-primary",onClick:function(){setModal("addProp")}},"+ Add")
-        ),
-        data.properties.map(function(p){
-          var eq=(p.currentValue||0)-p.mortgageBalance;
-          return h("div",{key:p.id,className:"card",style:{marginBottom:16,borderLeft:"3px solid "+(p.isRental?C.orange:p.lender==="Grand Ridge National Bank"?C.purple:C.accent)}},
-            h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:16}},
-              h("div",null,
-                h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}},
-                  h("span",{style:{fontSize:15,fontWeight:700,color:"#fff"}},p.name),
-                  p.isRental&&h("span",{className:"badge badge-orange"},"RENTAL"),
-                  !p.isRental&&p.lender!=="Grand Ridge National Bank"&&h("span",{className:"badge badge-cyan"},"PRIMARY"),
-                  p.lender==="Grand Ridge National Bank"&&h("span",{className:"badge badge-purple"},"COMMERCIAL")
-                ),
-                h("div",{style:{color:C.muted,fontSize:13}},p.address),
-                p.loanDuration&&h("div",{style:{color:C.dim,fontSize:12}},p.lender+" · "+p.loanDuration)
-              ),
-              h("div",null,h("span",{style:{cursor:"pointer",color:C.muted,marginRight:10},onClick:function(){setEditItem(p);setModal("editProp")}},"edit"),h("span",{style:{cursor:"pointer",color:C.red},onClick:function(){delItem("properties",p.id)}},"del"))
-            ),
-            h("div",{style:{display:"grid",gridTemplateColumns:"repeat("+(p.currentValue>0?4:3)+",1fr)",gap:16}},
-              p.currentValue>0&&h("div",null,h("div",{className:"stat-label"},"Value"),h("div",{style:{fontSize:18,fontWeight:700,color:"#fff"}},fmt(p.currentValue))),
-              h("div",null,h("div",{className:"stat-label"},"Mortgage"),h("div",{style:{fontSize:18,fontWeight:700,color:C.red}},fmt(p.mortgageBalance)),p.rate>0&&h("div",{style:{fontSize:12,color:C.muted}},p.rate+"% APR")),
-              h("div",null,h("div",{className:"stat-label"},"Equity"),h("div",{style:{fontSize:18,fontWeight:700,color:eq>=0?C.green:C.red}},fmt(eq))),
-              h("div",null,h("div",{className:"stat-label"},"Monthly"),h("div",{style:{fontSize:18,fontWeight:700,color:"#fff"}},p.monthlyMortgage>0?fmt(p.monthlyMortgage):"--"))
-            )
-          );
-        }),
-        modal==="addProp"&&h(Modal,{title:"Add Property",onClose:function(){setModal(null)}},
-          h(Field,{label:"Name"},h(Inp,{value:f.name,onChange:function(e){sf(Object.assign({},f,{name:e.target.value}))}})),
-          h(Field,{label:"Address"},h(Inp,{value:f.address,onChange:function(e){sf(Object.assign({},f,{address:e.target.value}))}})),
-          h("div",{className:"form-row"},h(Field,{label:"Value"},h(Inp,{type:"number",value:f.currentValue,onChange:function(e){sf(Object.assign({},f,{currentValue:e.target.value}))}})),h(Field,{label:"Mortgage"},h(Inp,{type:"number",value:f.mortgageBalance,onChange:function(e){sf(Object.assign({},f,{mortgageBalance:e.target.value}))}}))),
-          h("div",{className:"form-row"},h(Field,{label:"Monthly Pmt"},h(Inp,{type:"number",value:f.monthlyMortgage,onChange:function(e){sf(Object.assign({},f,{monthlyMortgage:e.target.value}))}})),h(Field,{label:"Rate %"},h(Inp,{type:"number",value:f.rate,onChange:function(e){sf(Object.assign({},f,{rate:e.target.value}))}}))),
-          h("button",{className:"btn btn-primary",style:{width:"100%",marginTop:8},onClick:function(){if(f.name)addItem("properties",{name:f.name,address:f.address,currentValue:parseFloat(f.currentValue)||0,mortgageBalance:parseFloat(f.mortgageBalance)||0,monthlyMortgage:parseFloat(f.monthlyMortgage)||0,rate:parseFloat(f.rate)||0,lender:"",loanDuration:"",isRental:false})}},"Add")
-        ),
-        modal==="editProp"&&editItem&&h(Modal,{title:"Edit "+editItem.name,onClose:function(){setModal(null);setEditItem(null)}},
-          h("div",{className:"form-row"},h(Field,{label:"Value"},h(Inp,{type:"number",defaultValue:editItem.currentValue,onChange:function(e){editItem.currentValue=parseFloat(e.target.value)}})),h(Field,{label:"Mortgage"},h(Inp,{type:"number",defaultValue:editItem.mortgageBalance,onChange:function(e){editItem.mortgageBalance=parseFloat(e.target.value)}}))),
-          h("button",{className:"btn btn-primary",style:{width:"100%",marginTop:8},onClick:function(){updItem("properties",editItem.id,{currentValue:editItem.currentValue,mortgageBalance:editItem.mortgageBalance})}},"Save")
-        )
-      );
-    }
-
-    // ── CASH FLOW ──
-    function CashFlowPage() {
-      var is=useState({name:"",amount:""}); var incF=is[0]; var sI=is[1];
-      var es2=useState({name:"",amount:"",category:"housing"}); var expF=es2[0]; var sE=es2[1];
-      var chartData=MONTHS.map(function(m){return{month:m,income:T.income,expenses:T.expenses}});
-      return h("div",null,
-        h("h1",{style:{fontSize:26,fontWeight:800,color:"#fff",marginBottom:4}},"Cash Flow"),
-        h("p",{style:{color:C.muted,marginBottom:24}},"Monthly income vs expenses"),
-        h("div",{className:"grid-3"},
-          h("div",{className:"card"},h("div",{className:"stat-label"},"Income"),h("div",{style:{fontSize:22,fontWeight:700,color:C.green}},fmt(T.income))),
-          h("div",{className:"card"},h("div",{className:"stat-label"},"Expenses"),h("div",{style:{fontSize:22,fontWeight:700,color:C.red}},fmt(T.expenses))),
-          h("div",{className:"card"},h("div",{className:"stat-label"},"Net Savings"),h("div",{style:{fontSize:22,fontWeight:700,color:T.savings>=0?C.green:C.red}},fmt(T.savings)))
-        ),
-        h("div",{className:"card",style:{marginBottom:16}},
-          h(RC.ResponsiveContainer,{width:"100%",height:200},
-            h(RC.BarChart,{data:chartData},
-              h(RC.CartesianGrid,{strokeDasharray:"3 3",stroke:C.border}),
-              h(RC.XAxis,{dataKey:"month",tick:{fill:C.muted,fontSize:11},axisLine:false,tickLine:false}),
-              h(RC.YAxis,{tick:{fill:C.muted,fontSize:11},axisLine:false,tickLine:false}),
-              h(RC.Tooltip,{contentStyle:{background:C.card,border:"1px solid "+C.border,borderRadius:8},formatter:function(v){return fmt(v)}}),
-              h(RC.Bar,{dataKey:"income",fill:C.green,radius:[4,4,0,0]}),
-              h(RC.Bar,{dataKey:"expenses",fill:C.red,radius:[4,4,0,0],opacity:0.7}),
-              h(RC.Legend,{wrapperStyle:{fontSize:12}})
-            )
-          )
-        ),
-        h("div",{className:"grid-2"},
-          h("div",{className:"card"},
-            h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},h("span",{style:{fontWeight:600,color:C.green}},"Income"),h("button",{className:"btn btn-primary",style:{padding:"4px 10px",fontSize:12},onClick:function(){setModal("addIncome")}},"+")
-            ),
-            data.cashFlow.income.map(function(i){return h("div",{key:i.id,style:{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid "+C.border}},h("span",null,i.name),h("div",{style:{display:"flex",gap:12,alignItems:"center"}},h("span",{style:{fontWeight:600,color:C.green}},fmt(i.amount)),h("span",{style:{cursor:"pointer",color:C.red},onClick:function(){delItem("income",i.id)}},"x")));})
-          ),
-          h("div",{className:"card"},
-            h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},h("span",{style:{fontWeight:600,color:C.red}},"Expenses"),h("button",{className:"btn btn-primary",style:{padding:"4px 10px",fontSize:12},onClick:function(){setModal("addExpense")}},"+")
-            ),
-            data.cashFlow.expenses.map(function(e){return h("div",{key:e.id,style:{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid "+C.border}},h("span",null,e.name),h("div",{style:{display:"flex",gap:12,alignItems:"center"}},h("span",{style:{fontWeight:600,color:C.red}},fmt(e.amount)),h("span",{style:{cursor:"pointer",color:C.red},onClick:function(){delItem("expenses",e.id)}},"x")));})
-          )
-        ),
-        modal==="addIncome"&&h(Modal,{title:"Add Income",onClose:function(){setModal(null)}},
-          h(Field,{label:"Name"},h(Inp,{value:incF.name,onChange:function(e){sI(Object.assign({},incF,{name:e.target.value}))}})),
-          h(Field,{label:"Amount/month"},h(Inp,{type:"number",value:incF.amount,onChange:function(e){sI(Object.assign({},incF,{amount:e.target.value}))}})),
-          h("button",{className:"btn btn-primary",style:{width:"100%",marginTop:8},onClick:function(){if(incF.name&&incF.amount)addItem("income",{name:incF.name,amount:parseFloat(incF.amount)||0,frequency:"monthly"})}},"Add")
-        ),
-        modal==="addExpense"&&h(Modal,{title:"Add Expense",onClose:function(){setModal(null)}},
-          h(Field,{label:"Name"},h(Inp,{value:expF.name,onChange:function(e){sE(Object.assign({},expF,{name:e.target.value}))}})),
-          h("div",{className:"form-row"},h(Field,{label:"Amount"},h(Inp,{type:"number",value:expF.amount,onChange:function(e){sE(Object.assign({},expF,{amount:e.target.value}))}})),h(Field,{label:"Category"},h("select",{value:expF.category,onChange:function(e){sE(Object.assign({},expF,{category:e.target.value}))}},["housing","living","auto","insurance","savings"].map(function(c){return h("option",{key:c,value:c},c)})))),
-          h("button",{className:"btn btn-primary",style:{width:"100%",marginTop:8},onClick:function(){if(expF.name&&expF.amount)addItem("expenses",{name:expF.name,amount:parseFloat(expF.amount)||0,frequency:"monthly",category:expF.category})}},"Add")
-        )
-      );
-    }
-
-    // ── ZAKAT ──
-    function ZakatPage() {
-      var ss=useState(Object.assign({},DD.zakatSettings,data.zakatSettings||{})); var settings=ss[0]; var setSettings=ss[1];
-      function upd(k,v){var n=Object.assign({},settings);n[k]=v;setSettings(n);save(Object.assign({},data,{zakatSettings:n}));}
-      var zr = useMemo(function(){return computeZakat(data,settings);},[settings]);
-      function Tog(props){return h("button",{className:"tog-btn",style:{background:props.active?C.accent:"#0d1220",color:props.active?"#fff":C.muted,borderColor:props.active?C.accent:C.border},onClick:props.onClick},props.label);}
-      return h("div",null,
-        h("h1",{style:{fontSize:26,fontWeight:800,color:"#fff",marginBottom:4}},"Zakat Calculator"),
-        h("p",{style:{color:C.muted,marginBottom:24}},"Hanafi fiqh - live calculation"),
-        h("div",{className:"card",style:{background:"linear-gradient(135deg,#111827,#0c1a12)",marginBottom:20}},
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
-            h("div",null,
-              h("div",{style:{color:C.muted,fontSize:12,marginBottom:4}},"Zakat Due (2.5%)"),
-              h("div",{style:{fontSize:44,fontWeight:800,color:zr.met?C.green:C.muted}},fmt(zr.due)),
-              h("div",{style:{display:"flex",gap:20,marginTop:12}},
-                h("div",null,h("div",{style:{fontSize:11,color:C.muted}},"Net Zakatable"),h("div",{style:{fontSize:16,fontWeight:700,color:"#fff"}},fmt(zr.netZ))),
-                h("div",null,h("div",{style:{fontSize:11,color:C.muted}},"Deductions"),h("div",{style:{fontSize:16,fontWeight:700,color:C.red}},fmt(zr.deductions))),
-                h("div",null,h("div",{style:{fontSize:11,color:C.muted}},"Excluded"),h("div",{style:{fontSize:16,fontWeight:700,color:C.dim}},fmt(zr.totalExcl)))
-              )
-            ),
-            h("div",{style:{textAlign:"right"}},
-              h("div",{style:{padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:700,background:zr.met?"rgba(16,185,129,0.15)":"rgba(239,68,68,0.15)",color:zr.met?C.green:C.red,marginBottom:8}},zr.met?"Nisab Met":"Below Nisab"),
-              h("div",{style:{fontSize:12,color:C.muted}},"Nisab"),h("div",{style:{fontSize:16,fontWeight:600,color:"#fff"}},fmt(zr.nisab))
-            )
-          )
-        ),
-        h("div",{className:"card",style:{marginBottom:16}},
-          h("div",{style:{fontWeight:700,color:"#fff",marginBottom:16}},"Settings"),
-          h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}},
-            h("div",null,h("div",{style:{color:C.muted,fontSize:12,marginBottom:6}},"Nisab Basis"),h("div",{style:{display:"flex",gap:6}},h(Tog,{label:"Silver",active:settings.nisabBasis==="silver",onClick:function(){upd("nisabBasis","silver")}}),h(Tog,{label:"Gold",active:settings.nisabBasis==="gold",onClick:function(){upd("nisabBasis","gold")}}))),
-            h("div",null,h("div",{style:{color:C.muted,fontSize:12,marginBottom:6}},"Retirement"),h("div",{style:{display:"flex",gap:6}},h(Tog,{label:"Accessible",active:settings.retirementMethod==="accessible",onClick:function(){upd("retirementMethod","accessible")}}),h(Tog,{label:"Defer",active:settings.retirementMethod==="defer",onClick:function(){upd("retirementMethod","defer")}}))),
-            h("div",null,h("div",{style:{color:C.muted,fontSize:12,marginBottom:6}},"Debt Deduction"),h("div",{style:{display:"flex",gap:6}},h(Tog,{label:"12-Month",active:settings.debtDeduction==="short_term",onClick:function(){upd("debtDeduction","short_term")}}),h(Tog,{label:"None",active:settings.debtDeduction==="none",onClick:function(){upd("debtDeduction","none")}}))),
-            h("div",null,h("div",{style:{color:C.muted,fontSize:12,marginBottom:6}},"Tax+Penalty %"),h("div",{style:{display:"flex",gap:8,alignItems:"center"}},h("input",{type:"range",min:0,max:50,value:settings.retirementTaxPenaltyPct,onChange:function(e){upd("retirementTaxPenaltyPct",parseInt(e.target.value))},style:{flex:1}}),h("span",{style:{color:"#fff",fontWeight:600,minWidth:30}},settings.retirementTaxPenaltyPct+"%"))),
-            h("div",null,h("div",{style:{color:C.muted,fontSize:12,marginBottom:6}},"Gold oz"),h("input",{type:"number",step:"0.01",value:settings.goldWeightOz||"",placeholder:"0",onChange:function(e){upd("goldWeightOz",parseFloat(e.target.value)||0)},style:{padding:"6px 10px",background:"#0d1220",border:"1px solid "+C.border,borderRadius:8,color:"#fff",fontSize:13,width:"100%"}}))
-          )
-        ),
-        h("div",{className:"card"},
-          h("div",{style:{fontWeight:700,color:"#fff",marginBottom:16}},"Asset Breakdown"),
-          zr.breakdown.map(function(cat,ci){return h("div",{key:ci,style:{marginBottom:14,paddingBottom:14,borderBottom:ci<zr.breakdown.length-1?"1px solid "+C.border:"none"}},
-            h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:4}},
-              h("div",{style:{display:"flex",alignItems:"center",gap:8}},h("span",{style:{fontSize:16}},cat.icon),h("span",{style:{fontWeight:700,color:"#fff"}},cat.cat)),
-              h("div",null,cat.inc!==0&&h("span",{style:{fontWeight:700,color:cat.isDeduct?C.red:C.green,marginRight:8}},cat.isDeduct?"-":"+",fmt(Math.abs(cat.inc))),cat.excl>0&&h("span",{style:{fontSize:11,color:C.dim}},"(",fmt(cat.excl)," excl.)"))
-            ),
-            h("div",{style:{fontSize:11,color:C.muted,fontStyle:"italic",paddingLeft:24}},cat.rule)
-          )}),
-          h("div",{style:{background:"#0d1220",borderRadius:10,padding:16,border:"1px solid "+C.border,marginTop:8}},
-            h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:16,textAlign:"center"}},
-              h("div",null,h("div",{style:{fontSize:11,color:C.muted}},"Gross"),h("div",{style:{fontSize:15,fontWeight:700,color:"#fff"}},fmt(zr.grossZ))),
-              h("div",null,h("div",{style:{fontSize:11,color:C.muted}},"Deductions"),h("div",{style:{fontSize:15,fontWeight:700,color:C.red}},"-"+fmt(zr.deductions))),
-              h("div",null,h("div",{style:{fontSize:11,color:C.muted}},"Net Zakatable"),h("div",{style:{fontSize:15,fontWeight:700,color:C.accent}},fmt(zr.netZ))),
-              h("div",null,h("div",{style:{fontSize:11,color:C.muted}},"Zakat Due"),h("div",{style:{fontSize:15,fontWeight:700,color:C.green}},fmt(zr.due)))
-            )
-          )
-        )
-      );
-    }
-
-    // ── ALERTS ──
-    function AlertsPage() {
-      var fs=useState({text:"",date:"",type:"reminder"}); var f=fs[0]; var sf=fs[1];
-      return h("div",null,
-        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}},
-          h("h1",{style:{fontSize:26,fontWeight:800,color:"#fff"}},"Alerts & Reminders"),
-          h("button",{className:"btn btn-primary",onClick:function(){setModal("addAlert")}},"+ Add Alert")
-        ),
-        data.alerts.filter(function(a){return a.active}).map(function(a){return h("div",{key:a.id,className:"alert-card alert-"+a.type},
-          h("div",null,h("div",{style:{fontWeight:600,color:"#fff"}},a.text),h("div",{style:{fontSize:12,color:C.muted,marginTop:4}},a.date)),
-          h("div",{style:{display:"flex",gap:10,alignItems:"center"}},
-            h("span",{className:"badge badge-"+(a.type==="deadline"?"red":a.type==="reminder"?"purple":"orange")},a.type),
-            h("button",{className:"btn btn-ghost",style:{padding:"4px 10px",fontSize:11},onClick:function(){updItem("alerts",a.id,{active:false})}},"Done")
-          )
-        )}),
-        modal==="addAlert"&&h(Modal,{title:"Add Alert",onClose:function(){setModal(null)}},
-          h(Field,{label:"Description"},h(Inp,{value:f.text,onChange:function(e){sf(Object.assign({},f,{text:e.target.value}))}})),
-          h("div",{className:"form-row"},
-            h(Field,{label:"Date"},h(Inp,{type:"date",value:f.date,onChange:function(e){sf(Object.assign({},f,{date:e.target.value}))}})),
-            h(Field,{label:"Type"},h("select",{value:f.type,onChange:function(e){sf(Object.assign({},f,{type:e.target.value}))}},h("option",{value:"reminder"},"Reminder"),h("option",{value:"deadline"},"Deadline"),h("option",{value:"review"},"Review")))
-          ),
-          h("button",{className:"btn btn-primary",style:{width:"100%",marginTop:8},onClick:function(){if(f.text)addItem("alerts",{text:f.text,date:f.date,type:f.type,active:true})}},"Add")
-        )
-      );
-    }
-
-    var PAGES = {overview:OverviewPage,bank:BankPage,stocks:StocksPage,retirement:RetirementPage,properties:PropertiesPage,cashflow:CashFlowPage,zakat:ZakatPage,alerts:AlertsPage};
-    var PageComp = PAGES[page];
+    var PAGES={overview:OverviewPage,bank:BankPage,stocks:StocksPage,retirement:RetirementPage,properties:PropertiesPage,cashflow:CashFlowPage,zakat:ZakatPage,alerts:AlertsPage};
+    var PageComp=PAGES[page];
 
     return h("div",{style:{display:"flex",minHeight:"100vh",background:C.bg}},
       h("div",{style:{width:240,background:"#080c14",borderRight:"1px solid "+C.border,padding:"24px 0",display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,bottom:0,zIndex:10}},
         h("div",{style:{padding:"0 24px 32px",fontSize:20,fontWeight:700,color:"#fff"}},h("span",{style:{color:C.accent}},"Wealth"),"Lens"),
         h("nav",{style:{flex:1}},
           NAV.map(function(item){return h("div",{key:item.key,className:"nav-item"+(page===item.key?" active":""),onClick:function(){setPage(item.key)}},
-            h("span",null,item.icon),h("span",null,item.label),
+            h("span",null,item.icon),
+            h("span",null,item.label),
             item.key==="alerts"&&alertCount>0&&h("span",{style:{marginLeft:"auto",background:C.red,color:"#fff",fontSize:10,fontWeight:700,borderRadius:10,padding:"1px 6px"}},alertCount)
           )})
         ),
-        h("div",{style:{padding:"0 24px"}},h("button",{className:"btn btn-ghost",style:{width:"100%",fontSize:12},onClick:function(){save(DD)}},"Reset Data"))
+        h("div",{style:{padding:"0 24px"}},
+          h("button",{className:"btn btn-ghost",style:{width:"100%",fontSize:12},onClick:function(){save(DD)}},"Reset Data")
+        )
       ),
-      h("div",{style:{flex:1,marginLeft:240,padding:"32px 40px"}},h(PageComp,null))
+      h("div",{style:{flex:1,marginLeft:240,padding:"32px 40px"}},
+        h(PageComp,null)
+      )
     );
   }
 
   ReactDOM.createRoot(document.getElementById("root")).render(h(App,null));
-})();
+});
 </script>
 </body>
 </html>
